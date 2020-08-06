@@ -1,0 +1,75 @@
+// this program checks for light using ligh sensor and turns on the light when it is dark. 
+int sensorPin=2;
+int lightSensor=A0;
+int ledPin=3;
+int buttonPin=3;
+int count=LOW;
+
+void setup(){
+  
+  //set pins as outputs
+  pinMode(ledPin, OUTPUT);
+  pinMode(lightSensor,INPUT);
+  Serial.begin(9600);
+
+cli();//clearing any ongoing interrupts
+
+
+ attachInterrupt(digitalPinToInterrupt(buttonPin),pressAction,CHANGE);
+ attachInterrupt(digitalPinToInterrupt(sensorPin),runAction,RISING);
+
+  TCCR1A = 0;// setting all TCCR1A register to 0
+  TCCR1B = 0;// also same for TCCR1B
+  TCNT1  = 0;//initialising counter value to 0
+  // seting compare match register for 0.25hz increments
+  OCR1A =  162500;//  to fire interrupt every 4 seconds.  (16*10^6) / (0.25*1024) - 1 (using timer1 since 162500 is greater than 256 and less than 65536) 
+  // turning on CTC mode
+  TCCR1B |= (1 << WGM12);
+  
+  // Setting CS12 and CS10 bits for 1024 prescaler
+  TCCR1B |= (1 << CS12) | (1 << CS10);  
+  // enable timer compare interrupt
+  TIMSK1 |= (1 << OCIE1A);
+
+
+
+
+sei();//enable  interrupts
+
+}
+
+void runAction(){
+  Serial.println("High");
+   digitalWrite(ledPin,HIGH);
+ 
+  
+}
+void pressAction(){
+  Serial.println("Button Pressed");
+  if(count==LOW){
+    digitalWrite(ledPin,HIGH);
+    count=HIGH;
+  }
+}
+
+
+//check for darkness every 4 seconds using interrupts
+ISR(TIMER1_COMPA_vect){
+
+ 
+Serial.println(analogRead(A0));
+  if(analogRead(A0)>100){
+    Serial.println("Its brightlight turn the lights off");
+    digitalWrite(3,LOW);
+  } else {
+    Serial.println("Oh its getting dark, lets turn the lights on");
+    digitalWrite(3,HIGH);
+  }
+}
+  
+
+
+
+void loop(){
+  //do other things here
+}
